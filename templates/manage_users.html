@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users{% endblock %}
+{% block page_title %}Manage Users{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <h1>Manage Users</h1>
+    <p class="page-subtitle">
+        Create and manage authorised system accounts.
+    </p>
+</div>
+
+<div class="panel">
+    <h4 class="h5 mb-3">Create New User</h4>
+
+    <form method="POST">
+        <div class="row">
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Full Name</label>
+                <input type="text"
+                       name="full_name"
+                       class="form-control"
+                       maxlength="100"
+                       required>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Username</label>
+                <input type="text"
+                       name="username"
+                       class="form-control"
+                       maxlength="50"
+                       required>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Password</label>
+                <input type="password"
+                       name="password"
+                       class="form-control"
+                       minlength="12"
+                       autocomplete="new-password"
+                       required>
+                <small class="text-muted">
+                    Use at least 12 characters.
+                </small>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">User Role</label>
+                <select name="role" class="form-select" required>
+                    <option value="">Select a role</option>
+                    <option value="admin">Administrator</option>
+                    <option value="surveillance_officer">
+                        Surveillance Officer
+                    </option>
+                    <option value="regulatory_viewer">
+                        Regulatory Viewer
+                    </option>
+                </select>
+            </div>
+
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-person-plus me-1"></i> Create User Account
+        </button>
+    </form>
+</div>
+
+<div class="panel">
+    <h4 class="h5 mb-3">Registered Users</h4>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Full Name</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Date Created</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td class="fw-semibold">{{ user.full_name }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.role.replace('_', ' ').title() }}</td>
+
+                    <td>
+                        {% if user.is_active %}
+                            <span class="pill pill-success">Active</span>
+                        {% else %}
+                            <span class="pill pill-danger">Inactive</span>
+                        {% endif %}
+                    </td>
+
+                    <td>{{ user.created_at }}</td>
+
+                    <td>
+                        {% if user.id != session.get('user_id') %}
+                        <form method="POST"
+                              action="{{ url_for('toggle_user', user_id=user.id) }}">
+                            <button type="submit"
+                                    class="btn btn-sm {% if user.is_active %}btn-danger{% else %}btn-success{% endif %}">
+                                {% if user.is_active %}
+                                    Deactivate
+                                {% else %}
+                                    Activate
+                                {% endif %}
+                            </button>
+                        </form>
+                        {% else %}
+                            <span class="text-muted">Current account</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        No users found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Verification Records{% endblock %}
+{% block page_title %}Upload CSV{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <h1>Upload Verification Records</h1>
+    <p class="page-subtitle">
+        Import multiple drug batch verification records using a CSV file.
+    </p>
+</div>
+
+<div class="card" style="max-width: 820px;">
+    <div class="card-body p-4">
+
+        <form method="POST"
+              action="{{ url_for('upload_verifications') }}"
+              enctype="multipart/form-data">
+
+            <div class="mb-4">
+                <label for="csv_file" class="form-label">
+                    Select CSV File
+                </label>
+
+                <input
+                    type="file"
+                    class="form-control"
+                    id="csv_file"
+                    name="csv_file"
+                    accept=".csv,text/csv"
+                    required
+                >
+            </div>
+
+            <div class="interpretation-note mb-4">
+                <strong><i class="bi bi-file-earmark-spreadsheet me-1"></i> Required CSV headings</strong>
+
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <span class="pill pill-blue">batch_code</span>
+                    <span class="pill pill-blue">verification_result</span>
+                    <span class="pill pill-blue">verified_at</span>
+                    <span class="pill pill-blue">verification_location</span>
+                    <span class="pill pill-blue">device_reference</span>
+                </div>
+
+                <p class="mt-3 mb-0">
+                    Use success or failure for verification results.
+                    Date and time format:
+                    <strong>YYYY-MM-DD HH:MM:SS</strong>.
+                </p>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-cloud-arrow-up me-1"></i> Upload Verification Records
+            </button>
+
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Batch Records{% endblock %}
+{% block page_title %}Batch Records{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <h1>Drug Batch Records</h1>
+    <p class="page-subtitle">
+        View registered drug batches and perform risk-based surveillance assessments.
+    </p>
+</div>
+
+<section class="records-panel">
+
+    <div class="records-heading">
+        <div>
+            <h2>Registered Batches</h2>
+            <p class="page-subtitle">
+                Batch information and available surveillance actions.
+            </p>
+        </div>
+
+        {% if batches is defined and batches %}
+            <span class="record-count">
+                {{ batches|length }} Batch Records
+            </span>
+        {% endif %}
+    </div>
+
+    {% if error %}
+
+        <div class="error-message">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+        </div>
+
+    {% elif batches is defined %}
+
+        {% if batches %}
+
+            <div class="table-wrap">
+                <table class="batch-table">
+                    <thead>
+                        <tr>
+                            <th>Batch Code</th>
+                            <th>Product</th>
+                            <th>Product ID</th>
+                            <th>Expiry Date</th>
+                            <th>Batch Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for batch in batches %}
+                        <tr>
+                            <td>
+                                <span class="batch-code">
+                                    {{ batch.batch_code }}
+                                </span>
+                            </td>
+
+                            <td>
+                                {{ batch.product_name }}
+                            </td>
+
+                            <td>
+                                {{ batch.product_id or "—" }}
+                            </td>
+
+                            <td>
+                                {{ batch.expiry_date or "—" }}
+                            </td>
+
+                            <td>
+                                {% set status = batch.batch_status|lower %}
+                                <span class="status-label status-{{ status }}">
+                                    {{ batch.batch_status|replace('_', ' ') }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <div class="action-buttons">
+
+                                    <form
+                                        action="{{ url_for('assess_batch', batch_id=batch.id) }}"
+                                        method="POST"
+                                    >
+                                        <button type="submit"
+                                                class="btn btn-primary btn-sm">
+                                            Assess Risk
+                                        </button>
+                                    </form>
+
+                                    <a
+                                        href="{{ url_for('verification_records', batch_id=batch.id) }}"
+                                        class="btn btn-outline-primary btn-sm"
+                                    >
+                                        Verifications
+                                    </a>
+
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% else %}
+
+            <div class="empty-state">
+                <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+                <h3>No Batch Records Found</h3>
+                <p>
+                    There are currently no drug batch records available.
+                </p>
+            </div>
+
+        {% endif %}
+
+    {% else %}
+
+        <div class="empty-state">
+            <h3>Batch Information Unavailable</h3>
+            <p>
+                Open the batch records page to retrieve information from the database.
+            </p>
+            <a href="/batches" class="btn btn-primary">
+                Load Batch Records
+            </a>
+        </div>
+
+    {% endif %}
+
+</section>
+
+{% endblock %}

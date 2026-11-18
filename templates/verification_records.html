@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Verification Records{% endblock %}
+{% block page_title %}Verification Records{% endblock %}
+
+{% block content %}
+
+<div class="page-heading d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+        <h1>Verification Records</h1>
+        <p class="page-subtitle">
+            Batch: <strong>{{ batch.batch_code }}</strong> &nbsp;|&nbsp;
+            Product: <strong>{{ batch.product_name }}</strong>
+        </p>
+    </div>
+
+    <a href="/batches" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left me-1"></i> Return to Batch Records
+    </a>
+</div>
+
+{% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+<div class="card mb-4">
+    <div class="card-header">Enter Verification Data</div>
+
+    <div class="card-body">
+        <form method="POST">
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        Verification Result
+                    </label>
+                    <select
+                        name="verification_result"
+                        class="form-select"
+                        required
+                    >
+                        <option value="">Select result</option>
+                        <option value="success">Success</option>
+                        <option value="failure">Failure</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        Verification Date and Time
+                    </label>
+                    <input
+                        type="datetime-local"
+                        name="verified_at"
+                        class="form-control"
+                        required
+                    >
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        Verification Location
+                    </label>
+                    <input
+                        type="text"
+                        name="verification_location"
+                        class="form-control"
+                        maxlength="255"
+                        placeholder="Enter location"
+                    >
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        Device Reference
+                    </label>
+                    <input
+                        type="text"
+                        name="device_reference"
+                        class="form-control"
+                        maxlength="100"
+                        placeholder="Enter device reference"
+                    >
+                </div>
+
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check2-circle me-1"></i> Save Verification Record
+            </button>
+
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Recorded Verification Activities</div>
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Result</th>
+                    <th>Date and Time</th>
+                    <th>Location</th>
+                    <th>Device</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td>
+                        {% if record.verification_result == 'failure' %}
+                            <span class="pill pill-danger">
+                                {{ record.verification_result|title }}
+                            </span>
+                        {% else %}
+                            <span class="pill pill-success">
+                                {{ record.verification_result|title }}
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>{{ record.verified_at }}</td>
+                    <td>{{ record.verification_location or 'Not available' }}</td>
+                    <td>{{ record.device_reference or 'Not available' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-4">
+                        No verification records have been entered
+                        for this batch.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

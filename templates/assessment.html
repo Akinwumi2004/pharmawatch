@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Batch Risk Assessment{% endblock %}
+{% block page_title %}Risk Assessment{% endblock %}
+
+{% block content %}
+
+<div class="page-heading d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+        <h1>Batch Risk Assessment</h1>
+        <p class="page-subtitle">
+            Risk-based decision support for counterfeit drug surveillance
+        </p>
+    </div>
+
+    <a href="/batches" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left me-1"></i> Return to Batch Records
+    </a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="h5 mb-3">{{ batch.product_name }}</h2>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="meta-label">Batch code</div>
+                <div class="meta-value">{{ batch.batch_code }}</div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="meta-label">Product ID</div>
+                <div class="meta-value">
+                    {{ batch.product_id or 'Not available' }}
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="meta-label">Batch status</div>
+                <div class="meta-value">
+                    {{ batch.batch_status|replace('_', ' ')|title }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2 class="h5 mb-3">Assessment Results</h2>
+
+<div class="row g-3 mb-4">
+
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="meta-label mb-2">Risk score</div>
+                <div class="score-figure">
+                    {{ result.risk_score }}<span class="fs-5 text-muted fw-semibold"> / 100</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="meta-label mb-2">Risk level</div>
+                <div class="score-figure" style="font-size:1.9rem;">
+                    {{ result.risk_level|upper }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="meta-label mb-2">Surveillance priority</div>
+                <div class="score-figure" style="font-size:1.35rem;">
+                    {{ result.surveillance_priority
+                        |replace('_', ' ')|upper }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        Risk Indicator Breakdown
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Risk indicator</th>
+                    <th>Indicator value</th>
+                    <th>Weighted contribution</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for name, value in indicators.items() %}
+                <tr>
+                    <td class="fw-semibold">{{ name|replace('_', ' ')|title }}</td>
+                    <td>{{ value }}</td>
+                    <td>{{ result.contributions[name] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="interpretation-note mb-4">
+    <strong><i class="bi bi-info-circle-fill me-1"></i> Interpretation:</strong>
+    This assessment supports surveillance prioritisation.
+    A high risk score indicates a need for greater review;
+    it does not establish that a medicine is counterfeit.
+    Regulatory review and further investigation remain necessary.
+</div>
+
+<a href="/batches" class="btn btn-primary">
+    Return to Batch Records
+</a>
+
+{% endblock %}

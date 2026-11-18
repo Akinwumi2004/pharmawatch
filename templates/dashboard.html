@@ -1,0 +1,642 @@
+{% extends "base.html" %}
+
+{% block title %}Surveillance Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+    <!-- WELCOME SECTION -->
+    <div class="dashboard-welcome">
+        <div class="welcome-label mb-3">Surveillance Control Centre</div>
+
+        <h1>Drug Surveillance Dashboard</h1>
+
+        <p>
+            Monitor verification activity, assess batch risks
+            and prioritise surveillance decisions.
+        </p>
+
+        {% if session.get('full_name') %}
+            <div class="welcome-user">
+                <i class="bi bi-person-circle"></i>
+                <span>
+                    Signed in as
+                    <strong>{{ session.get('full_name') }}</strong>
+                    &middot;
+                    {{ session.get('role', '').replace('_', ' ')|title }}
+                </span>
+            </div>
+        {% endif %}
+    </div>
+
+
+    {% set urgent = batches
+        | selectattr('surveillance_priority', 'equalto', 'urgent_review')
+        | list %}
+
+    {% set high = batches
+        | selectattr('risk_level', 'equalto', 'high')
+        | list %}
+
+    {% set medium = batches
+        | selectattr('risk_level', 'equalto', 'medium')
+        | list %}
+
+    {% set low = batches
+        | selectattr('risk_level', 'equalto', 'low')
+        | list %}
+
+    {% set assessed = high|length + medium|length + low|length %}
+    {% set unassessed = batches|length - assessed %}
+
+
+    <!-- SUMMARY CARDS -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-6 col-lg-3">
+            <div class="card summary-card h-100">
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between
+                                align-items-center">
+
+                        <span class="summary-label">
+                            Urgent Review
+                        </span>
+
+                        <div class="summary-icon icon-urgent"><i class="bi bi-exclamation-triangle-fill"></i></div>
+
+                    </div>
+
+                    <div class="summary-number text-danger">
+                        {{ urgent|length }}
+                    </div>
+
+                    <small class="text-muted">
+                        Requires prompt attention
+                    </small>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-6 col-lg-3">
+            <div class="card summary-card h-100">
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between
+                                align-items-center">
+
+                        <span class="summary-label">
+                            High Risk
+                        </span>
+
+                        <div class="summary-icon icon-high"><i class="bi bi-graph-up-arrow"></i></div>
+
+                    </div>
+
+                    <div class="summary-number text-danger">
+                        {{ high|length }}
+                    </div>
+
+                    <small class="text-muted">
+                        High risk classification
+                    </small>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-6 col-lg-3">
+            <div class="card summary-card h-100">
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between
+                                align-items-center">
+
+                        <span class="summary-label">
+                            Medium Risk
+                        </span>
+
+                        <div class="summary-icon icon-medium"><i class="bi bi-activity"></i></div>
+
+                    </div>
+
+                    <div class="summary-number"
+                         style="color:#b45309;">
+
+                        {{ medium|length }}
+
+                    </div>
+
+                    <small class="text-muted">
+                        Moderate risk classification
+                    </small>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-6 col-lg-3">
+            <div class="card summary-card h-100">
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between
+                                align-items-center">
+
+                        <span class="summary-label">
+                            Assessed Batches
+                        </span>
+
+                        <div class="summary-icon icon-total"><i class="bi bi-check2-circle"></i></div>
+
+                    </div>
+
+                    <div class="summary-number">
+                        {{ assessed }}
+                    </div>
+
+                    <small class="text-muted">
+                        {{ unassessed }} not yet assessed
+                    </small>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- RISK DISTRIBUTION -->
+    <div class="section-card p-4 mb-4">
+
+        <div class="mb-3">
+            <h2 class="section-title mb-1">
+                Risk Distribution
+            </h2>
+
+            <p class="section-description mb-0">
+                Latest recorded classification for each assessed batch.
+            </p>
+        </div>
+
+        {% if assessed > 0 %}
+
+            <div class="chart-container">
+
+                <canvas id="riskChart"
+                        aria-label="Distribution of assessed batches by risk level">
+                </canvas>
+
+            </div>
+
+        {% else %}
+
+            <div class="alert alert-secondary mb-0">
+                No batches have been assessed yet.
+                An authorised user can select Assess beside a batch
+                to calculate its risk.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- PRIORITISED BATCH LIST -->
+    <div class="section-card p-4 mb-4">
+
+        <div class="d-flex flex-wrap justify-content-between
+                    align-items-center gap-2 mb-4">
+
+            <div>
+                <h2 class="section-title mb-1">
+                    Prioritised Batch List
+                </h2>
+
+                <p class="section-description mb-0">
+                    Review batch risk classifications and surveillance priorities.
+                </p>
+            </div>
+
+            <span class="record-count">
+                {{ batches|length }} Batches
+            </span>
+
+        </div>
+
+
+        <!-- FILTER -->
+        <div class="mb-4 filter-control">
+
+            <label for="riskFilter" class="form-label">
+                Filter batches by risk level
+            </label>
+
+            <select id="riskFilter" class="form-select">
+
+                <option value="all">All Batches</option>
+                <option value="urgent_review">Urgent Review</option>
+                <option value="low">Low Risk</option>
+                <option value="medium">Medium Risk</option>
+                <option value="high">High Risk</option>
+                <option value="not assessed">Not Assessed</option>
+
+            </select>
+
+        </div>
+
+
+        <!-- TABLE -->
+        <div class="table-responsive">
+
+            <table class="table table-hover dashboard-table">
+
+                <thead>
+                    <tr>
+                        <th>Batch</th>
+                        <th>Product</th>
+                        <th>Status</th>
+                        <th>Risk Score</th>
+                        <th>Risk Level</th>
+                        <th>Surveillance Priority</th>
+                        <th>Assessment Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+
+                <tbody id="batchTableBody">
+
+                    {% for batch in batches %}
+
+                        <tr
+                            data-risk-level="{{ (batch.risk_level or 'not assessed')|lower }}"
+                            data-priority="{{ (batch.surveillance_priority or '')|lower }}"
+                        >
+
+                            <td class="fw-bold batch-code">
+
+                                {{ batch.batch_code }}
+
+                            </td>
+
+                            <td>
+                                {{ batch.product_name }}
+                            </td>
+
+                            <td>
+                                {{ batch.batch_status
+                                    |replace('_', ' ')|title }}
+                            </td>
+
+                            <td class="fw-semibold">
+
+                                {% if batch.risk_score is not none %}
+
+                                    {{ "%.2f"|format(batch.risk_score|float) }}
+
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- RISK LEVEL -->
+                            <td>
+
+                                {% if batch.risk_level == 'high' %}
+
+                                    <span class="risk-badge risk-high">
+                                        HIGH
+                                    </span>
+
+                                {% elif batch.risk_level == 'medium' %}
+
+                                    <span class="risk-badge risk-medium">
+                                        MEDIUM
+                                    </span>
+
+                                {% elif batch.risk_level == 'low' %}
+
+                                    <span class="risk-badge risk-low">
+                                        LOW
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="risk-badge risk-unassessed">
+                                        NOT ASSESSED
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- SURVEILLANCE PRIORITY -->
+                            <td>
+
+                                {% if batch.surveillance_priority == 'urgent_review' %}
+
+                                    <span class="urgent-label">
+                                        URGENT REVIEW
+                                    </span>
+
+                                {% elif batch.surveillance_priority %}
+
+                                    <span class="text-muted small fw-semibold">
+                                        {{ batch.surveillance_priority
+                                            |replace('_', ' ')|title }}
+                                    </span>
+
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- ASSESSMENT DATE -->
+                            <td class="text-muted small">
+
+                                {% if batch.assessed_at %}
+
+                                    {{ batch.assessed_at.strftime('%Y-%m-%d %H:%M') }}
+
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- ACTIONS -->
+                            <td>
+
+                                <div class="action-buttons">
+
+                                    <a
+                                        href="{{ url_for(
+                                            'verification_records',
+                                            batch_id=batch.id
+                                        ) }}"
+                                        class="btn btn-outline-primary btn-sm"
+                                    >
+                                        Verifications
+                                    </a>
+
+
+                                    {% if session.get('role') in
+                                          ('admin', 'surveillance_officer') %}
+
+                                        <form
+                                            action="{{ url_for(
+                                                'assess_batch',
+                                                batch_id=batch.id
+                                            ) }}"
+                                            method="post"
+                                        >
+
+                                            <button type="submit"
+                                                    class="btn btn-primary btn-sm">
+
+                                                Assess
+
+                                            </button>
+
+                                        </form>
+
+                                    {% endif %}
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    {% else %}
+
+                        <tr>
+                            <td colspan="8"
+                                class="text-center text-muted py-5">
+
+                                No batch records found.
+
+                            </td>
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <p id="filterMessage"
+           class="text-muted small mt-3 mb-0"
+           style="display:none;">
+
+            No batches match the selected filter.
+
+        </p>
+
+    </div>
+
+
+    <!-- INTERPRETATION NOTICE -->
+    <div class="interpretation-note mb-4">
+
+        <strong>Important interpretation</strong>
+
+        <p class="mb-0 mt-2">
+
+            Risk scores support surveillance prioritisation.
+            A high score does not prove that a medicine is counterfeit.
+            Expired or recalled batches marked for urgent review require
+            appropriate follow-up. Further investigation and regulatory
+            review remain necessary.
+
+        </p>
+
+    </div>
+
+<!-- CHART DATA -->
+<script id="risk-chart-data" type="application/json">
+{
+    "labels": ["Low Risk", "Medium Risk", "High Risk"],
+    "values": [
+        {{ low|length }},
+        {{ medium|length }},
+        {{ high|length }}
+    ]
+}
+</script>
+
+
+<!-- CHART.JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    // RISK DISTRIBUTION CHART
+
+    const canvas = document.getElementById("riskChart");
+
+    const dataElement = document.getElementById(
+        "risk-chart-data"
+    );
+
+    if (canvas && dataElement && typeof Chart !== "undefined") {
+
+        const chartData = JSON.parse(
+            dataElement.textContent
+        );
+
+        new Chart(canvas, {
+
+            type: "doughnut",
+
+            data: {
+
+                labels: chartData.labels,
+
+                datasets: [{
+
+                    label: "Number of batches",
+
+                    data: chartData.values,
+
+                    backgroundColor: [
+                        "#059669",
+                        "#f59e0b",
+                        "#dc2626"
+                    ],
+
+                    borderColor: "#ffffff",
+
+                    borderWidth: 4,
+
+                    hoverOffset: 8
+
+                }]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                cutout: "68%",
+
+                plugins: {
+
+                    legend: {
+                        position: "bottom",
+
+                        labels: {
+                            padding: 22,
+                            usePointStyle: true,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+
+                    tooltip: {
+
+                        callbacks: {
+
+                            label: function (context) {
+
+                                return context.label + ": "
+                                    + context.raw + " batch(es)";
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        });
+
+    }
+
+
+    // BATCH FILTER
+
+    const riskFilter = document.getElementById("riskFilter");
+
+    const batchRows = document.querySelectorAll(
+        "#batchTableBody tr[data-risk-level]"
+    );
+
+    const filterMessage = document.getElementById(
+        "filterMessage"
+    );
+
+    if (riskFilter) {
+
+        riskFilter.addEventListener("change", function () {
+
+            const selected = this.value;
+
+            let visibleCount = 0;
+
+            batchRows.forEach(function (row) {
+
+                const risk = row.dataset.riskLevel;
+
+                const priority = row.dataset.priority;
+
+                const matches =
+                    selected === "all" ||
+                    (
+                        selected === "urgent_review"
+                            ? priority === "urgent_review"
+                            : risk === selected
+                    );
+
+                row.style.display = matches ? "" : "none";
+
+                if (matches) {
+                    visibleCount++;
+                }
+
+            });
+
+            if (filterMessage) {
+
+                filterMessage.style.display =
+                    visibleCount === 0 ? "block" : "none";
+
+            }
+
+        });
+
+    }
+
+});
+</script>
+
+{% endblock %}
